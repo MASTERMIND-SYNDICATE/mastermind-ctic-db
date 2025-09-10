@@ -1,0 +1,5 @@
+impact_id,incident_id,amount_usd,downtime_days,notes
+1,1,850000,3,IR + restore
+2,2,120000,0.5,Account resets
+3,3,0,,Open case
+4,4,300000,1,Vendor remediation

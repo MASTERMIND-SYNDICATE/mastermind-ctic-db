@@ -1,0 +1,5 @@
+source_id,type,url,collected_on
+1,regulator,https://ocrportal.hhs.gov,2024-02-10
+2,news,https://news.example/phish,2023-11-26
+3,report,https://dbir.example/case-sqli,2025-03-10
+4,other,https://vendor.example/notice,2024-09-12

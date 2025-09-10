@@ -1,0 +1,5 @@
+sighting_id,indicator_id,seen_on,src_system,context
+1,1,2025-03-02,Wazuh,Blocked outbound
+2,2,2025-02-12,Cortex,Hash flagged
+3,3,2025-01-10,Zeek,Host lookup
+4,4,2024-09-07,Suricata,Alert signature match

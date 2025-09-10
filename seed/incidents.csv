@@ -1,0 +1,5 @@
+incident_id,org_id,start_on,discovered_on,end_on,summary,status,severity
+1,1,2024-01-10,2024-02-01,2024-02-05,Ransomware encrypted EHR,closed,high
+2,2,2023-11-15,2023-11-20,2023-11-22,Phishing credential theft,closed,medium
+3,3,2025-03-01,2025-03-03,,SQL injection customer portal,open,critical
+4,4,2024-09-05,2024-09-06,2024-09-07,Vendor breach exposure,closed,medium

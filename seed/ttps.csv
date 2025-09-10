@@ -1,0 +1,4 @@
+ttp_id,name,mitre_id
+1,Valid Accounts,T1078
+2,Exfiltration Over Web Service,T1567.002
+3,SQL Injection,T1190

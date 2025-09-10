@@ -1,0 +1,5 @@
+org_id,name,sector,size_band,country,domain
+1,Acme Health,Healthcare,Large,USA,acmehealth.org
+2,Metro Uni,Education,Medium,USA,metro.edu
+3,Finix Bank,Finance,Large,USA,finixbank.com
+4,CityGov,Public,Medium,USA,city.gov

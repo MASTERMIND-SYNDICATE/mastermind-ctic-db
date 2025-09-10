@@ -1,0 +1,5 @@
+incident_id,regime_id,notified_flag,notify_date
+1,2,true,2024-02-02
+2,1,true,2023-11-25
+3,1,false,
+4,2,true,2024-09-10

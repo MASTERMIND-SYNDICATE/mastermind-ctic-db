@@ -1,0 +1,5 @@
+indicator_id,value,type,first_seen,last_seen,source
+1,192.0.2.44,ip,2025-03-01,2025-03-02,MISP
+2,deadbeefdeadbeefdeadbeefdeadbeef,hash,2025-02-11,2025-02-13,VirusTotal
+3,malicious-login.net,domain,2025-01-05,2025-01-20,OpenCTI
+4,203.0.113.77,ip,2024-09-06,2024-09-07,Zeek

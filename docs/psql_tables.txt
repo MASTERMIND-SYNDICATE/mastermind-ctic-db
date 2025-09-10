@@ -1,0 +1,21 @@
+              List of relations
+ Schema |        Name         | Type  | Owner 
+--------+---------------------+-------+-------
+ public | campaigns           | table | rj
+ public | impacts             | table | rj
+ public | incident_indicators | table | rj
+ public | incident_regimes    | table | rj
+ public | incident_sources    | table | rj
+ public | incident_ttps       | table | rj
+ public | incident_vectors    | table | rj
+ public | incidents           | table | rj
+ public | indicator_campaign  | table | rj
+ public | indicators          | table | rj
+ public | organizations       | table | rj
+ public | regimes             | table | rj
+ public | sightings           | table | rj
+ public | sources             | table | rj
+ public | ttps                | table | rj
+ public | vectors             | table | rj
+(16 rows)
+

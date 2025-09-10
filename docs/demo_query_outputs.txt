@@ -1,0 +1,28 @@
+ incident_id |   name    | regime | notify_date | discovered_on | days_to_notify 
+-------------+-----------+--------+-------------+---------------+----------------
+           2 | Metro Uni | GDPR   | 2023-11-25  | 2023-11-20    |              5
+           4 | CityGov   | HIPAA  | 2024-09-10  | 2024-09-06    |              4
+(2 rows)
+
+   sector   | ale_usd 
+------------+---------
+ Healthcare |  850000
+ Public     |  300000
+ Education  |  120000
+ Finance    |       0
+(4 rows)
+
+     name      | cnt 
+---------------+-----
+ SQL Injection |   1
+(1 row)
+
+       name       | shared_iocs 
+------------------+-------------
+ CloudRansom-2024 |           2
+(1 row)
+
+ incident_id | name 
+-------------+------
+(0 rows)
+
