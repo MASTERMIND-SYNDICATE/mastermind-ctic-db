@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict CuBItorx3ihaE2OxN69haqQKga0HD90QLbLaL2VFZgknkbbs7ReOcHGJqm0jvcx
+\restrict kN93vhWvEoNTMpPTWpd7cMmXJdCf8rd44xYWtnI5J94SL337vGbeQD9tT5C0tLW
 
 -- Dumped from database version 15.14 (Debian 15.14-1.pgdg13+1)
 -- Dumped by pg_dump version 15.14 (Homebrew)
@@ -1182,5 +1182,5 @@ ALTER TABLE ONLY public.sightings
 -- PostgreSQL database dump complete
 --
 
-\unrestrict CuBItorx3ihaE2OxN69haqQKga0HD90QLbLaL2VFZgknkbbs7ReOcHGJqm0jvcx
+\unrestrict kN93vhWvEoNTMpPTWpd7cMmXJdCf8rd44xYWtnI5J94SL337vGbeQD9tT5C0tLW
 
