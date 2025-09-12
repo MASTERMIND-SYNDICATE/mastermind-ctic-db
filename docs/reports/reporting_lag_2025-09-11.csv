@@ -1,0 +1,4 @@
+incident_id,name,regime,discovered_on,notify_date,days_to_notify,overdue
+1,Acme Health,HIPAA,2024-02-01,2024-02-02,1,f
+2,Metro Uni,GDPR,2023-11-20,2023-11-25,5,t
+4,CityGov,HIPAA,2024-09-06,2024-09-10,4,t

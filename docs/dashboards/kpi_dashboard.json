@@ -1,0 +1,21 @@
+{
+  "title": "CTIC KPI",
+  "schemaVersion": 38,
+  "editable": true,
+  "panels": [
+    {"type":"stat","title":"Incidents",
+     "targets":[{"refId":"A","rawSql":"SELECT incidents_total AS v FROM vw_kpis;","format":"table","rawQuery":true}]},
+    {"type":"stat","title":"Indicators",
+     "targets":[{"refId":"A","rawSql":"SELECT indicators_total AS v FROM vw_kpis;","format":"table","rawQuery":true}]},
+    {"type":"stat","title":"Campaigns",
+     "targets":[{"refId":"A","rawSql":"SELECT campaigns_total AS v FROM vw_kpis;","format":"table","rawQuery":true}]},
+    {"type":"stat","title":"Sightings (30d)",
+     "targets":[{"refId":"A","rawSql":"SELECT sightings_30d AS v FROM vw_kpis;","format":"table","rawQuery":true}]},
+    {"type":"table","title":"Top TTPs (12m)",
+     "targets":[{"refId":"A","rawSql":"SELECT * FROM vw_top_ttps_12m;","format":"table","rawQuery":true}]},
+    {"type":"table","title":"ALE by Sector (24m)",
+     "targets":[{"refId":"A","rawSql":"SELECT * FROM vw_ale_by_sector_24m;","format":"table","rawQuery":true}]},
+    {"type":"table","title":"Over-72h Disclosures",
+     "targets":[{"refId":"A","rawSql":"SELECT incident_id, name, regime, days_to_notify FROM vw_reporting_lag_72h WHERE overdue ORDER BY days_to_notify DESC;","format":"table","rawQuery":true}]}
+  ]
+}

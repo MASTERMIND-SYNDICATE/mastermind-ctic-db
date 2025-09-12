@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: ctic-postgres
+    environment:
+      POSTGRES_DB: cticdb
+      POSTGRES_USER: ctic
+      POSTGRES_PASSWORD: cticpw
+    ports: ["55432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../schema/pgsql_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ../schema/views.sql:/docker-entrypoint-initdb.d/02_views.sql:ro
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ctic-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: strongpw
+    ports: ["127.0.0.1:8080:80"]
+    depends_on:
+      - postgres
+
+  etl:
+    build: ../etl
+    container_name: ctic-etl
+    environment:
+      PGHOST: host.docker.internal
+      PGPORT: "55432"
+      PGDATABASE: cticdb
+      PGUSER: ctic
+      PGPASSWORD: cticpw
+    depends_on:
+      - postgres
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: ctic-grafana
+    ports: ["127.0.0.1:3000:3000"]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ../docs/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
