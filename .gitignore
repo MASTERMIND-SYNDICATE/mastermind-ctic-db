@@ -11,3 +11,5 @@ docs/backups/*.sql
 infra/.env
 .env
 infra/.env
+.env
+infra/.env
