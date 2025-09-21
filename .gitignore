@@ -8,3 +8,6 @@ infra/pgdata/
 *.env
 docs/reports/*.csv
 docs/backups/*.sql
+infra/.env
+.env
+infra/.env
