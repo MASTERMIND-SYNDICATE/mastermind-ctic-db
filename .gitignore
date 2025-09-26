@@ -15,3 +15,5 @@ infra/.env
 infra/.env
 infra/.env
 infra/.env.local
+etl/mock/
+infra/.env.bak
