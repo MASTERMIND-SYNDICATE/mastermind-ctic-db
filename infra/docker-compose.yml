@@ -1,52 +1,109 @@
+
 services:
   postgres:
-    image: postgres:15
+    image: postgres:15.14
     container_name: ctic-postgres
     environment:
-      POSTGRES_DB: cticdb
       POSTGRES_USER: ctic
       POSTGRES_PASSWORD: cticpw
-    ports: ["55432:5432"]
+      POSTGRES_DB: cticdb
+    ports:
+      - "55432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ../schema/pgsql_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
-      - ../schema/views.sql:/docker-entrypoint-initdb.d/02_views.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ctic -d cticdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: ctic-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+      - grafana_logs:/var/log/grafana
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: ctic-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: strongpw
-    ports: ["127.0.0.1:8080:80"]
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
   etl:
-    build: ../etl
+    image: infra-etl:latest
+    build:
+      context: ..
+      dockerfile: infra/etl.Dockerfile
     container_name: ctic-etl
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace
+    env_file:
+      - ./.env
     environment:
-      PGHOST: host.docker.internal
-      PGPORT: "55432"
+      PGHOST: postgres
+      PGPORT: 5432
       PGDATABASE: cticdb
       PGUSER: ctic
       PGPASSWORD: cticpw
+    entrypoint: []
+    command: ["sh","-lc","while :; do python -u etl/misp_pull.py; sleep ${ETL_INTERVAL_SEC:-300}; done"]
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
-  grafana:
-    image: grafana/grafana:10.4.2
-    container_name: ctic-grafana
-    ports: ["127.0.0.1:3000:3000"]
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+  wazuh-sightings:
+    image: infra-etl:latest
+    container_name: ctic-wazuh-sightings
+    working_dir: /workspace
     volumes:
-      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ../docs/dashboards:/var/lib/grafana/dashboards:ro
+      - ..:/workspace
+    env_file:
+      - ./.env
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: cticdb
+      PGUSER: ctic
+      PGPASSWORD: cticpw
+      WZ_MOCK_PATH: /workspace/etl/mock/wz.json
+      ETL_INTERVAL_SEC: "0"
+      WAZUH_URL: ${WAZUH_URL:-}
+      WAZUH_USER: ${WAZUH_USER:-}
+      WAZUH_PASS: ${WAZUH_PASS:-}
+      WAZUH_INSECURE: ${WAZUH_INSECURE:-false}
+      WAZUH_QUERY_MINUTES: ${WAZUH_QUERY_MINUTES:-60}
+      WAZUH_LIMIT: ${WAZUH_LIMIT:-500}
+      WAZUH_SRC: ${WAZUH_SRC:-wazuh}
+    entrypoint: []
+    command: ["python","-u","etl/wazuh_sightings.py"]
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   pgdata:
+  grafana_data:
+  grafana_logs:

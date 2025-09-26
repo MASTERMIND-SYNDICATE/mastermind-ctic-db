@@ -1,0 +1,172 @@
+{
+  "uid": "ctic-kpi",
+  "title": "CTIC KPI",
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-30d", "to": "now" },
+  "schemaVersion": 39,
+  "version": 3,
+  "panels": [
+    {
+      "id": 1,
+      "title": "IoCs by Type",
+      "type": "piechart",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "CTICPG" },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "right", "values": ["percent", "value"] },
+        "tooltip": { "mode": "single" },
+        "pieType": "pie",
+        "reduceOptions": { "calcs": ["sum"] }
+      },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "editorMode": "code",
+          "rawSql": "SELECT type AS label, COUNT(*)::bigint AS value\nFROM public.indicators\nGROUP BY type\nORDER BY value DESC;"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Latest Indicators",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "CTICPG" },
+      "options": { "showHeader": true, "footer": { "show": false } },
+      "fieldConfig": { "defaults": { "custom": { "align": "auto" } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "editorMode": "code",
+          "rawSql": "SELECT indicator_id, value, type, source\nFROM public.indicators\nORDER BY indicator_id DESC\nLIMIT 20;"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Recent Sightings",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+      "datasource": { "type": "postgres", "uid": "CTICPG" },
+      "options": { "showHeader": true, "footer": { "show": false } },
+      "fieldConfig": { "defaults": { "custom": { "align": "auto" } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "editorMode": "code",
+          "rawSql": "SELECT s.sighting_id,\n       s.indicator_id,\n       s.seen_on,\n       s.src_system,\n       i.value,\n       i.type\nFROM public.sightings s\nLEFT JOIN public.indicators i ON i.indicator_id = s.indicator_id::bigint\nWHERE $__timeFilter(s.seen_on)\nORDER BY s.seen_on DESC\nLIMIT 100;"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Total Indicators",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 20 },
+      "datasource": { "type": "postgres", "uid": "CTICPG" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0 }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "format": "table", "editorMode": "code", "rawSql": "SELECT COUNT(*)::bigint AS value FROM public.indicators;" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Sightings (Time Range)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 20 },
+      "datasource": { "type": "postgres", "uid": "CTICPG" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "editorMode": "code",
+          "rawSql": "SELECT COUNT(*)::bigint AS value\nFROM public.sightings\nWHERE $__timeFilter(seen_on);"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Campaigns Total",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 20 },
+      "datasource": { "type": "postgres", "uid": "CTICPG" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0 }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "format": "table", "editorMode": "code", "rawSql": "SELECT 0::bigint AS value;" }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Indicators First Seen (per day)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+      "datasource": { "type": "postgres", "uid": "CTICPG" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT date_trunc('day', first_seen) AS time, COUNT(*)::bigint AS total\nFROM public.indicators\nWHERE $__timeFilter(first_seen)\nGROUP BY 1\nORDER BY 1;",
+          "format": "time_series",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] }
+    },
+    {
+      "id": 8,
+      "title": "Sightings by Source System",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
+      "datasource": { "type": "postgres", "uid": "CTICPG" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT date_trunc('day', seen_on) AS time, src_system, COUNT(*)::bigint\nFROM public.sightings\nWHERE $__timeFilter(seen_on)\n  AND src_system IN ($src_system)\nGROUP BY 1,2\nORDER BY 1;",
+          "format": "time_series",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "options": { "legend": { "showLegend": true } }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "src_system",
+        "type": "query",
+        "datasource": { "type": "postgres", "uid": "CTICPG" },
+        "query": "SELECT DISTINCT src_system FROM public.sightings ORDER BY 1",
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "annotations": { "list": [] }
+}
