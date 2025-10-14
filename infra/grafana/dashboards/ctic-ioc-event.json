@@ -1,0 +1,118 @@
+{
+  "id": null,
+  "uid": "ctic-ioc-event",
+  "title": "CTIC IoC / Event",
+  "timezone": "",
+  "schemaVersion": 39,
+  "version": 6,
+  "refresh": "30s",
+  "editable": true,
+  "tags": ["CTIC","IoC","Events"],
+  "time": {"from":"now-30d","to":"now"},
+  "templating": {
+    "list": [
+      {
+        "name": "type",
+        "label": "Indicator Type",
+        "type": "query",
+        "datasource": "CTIC Postgres",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "query": "SELECT DISTINCT type FROM public.indicators ORDER BY 1;"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "KPI: Indicators",
+      "gridPos": {"h":4,"w":6,"x":0,"y":0},
+      "datasource": "CTIC Postgres",
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]}},
+      "targets":[{"refId":"A","format":"table","rawSql":"SELECT count(*)::bigint AS total_indicators FROM public.indicators;"}]
+    },
+    {
+      "type": "stat",
+      "title": "KPI: Active Indicators (30d)",
+      "gridPos": {"h":4,"w":6,"x":6,"y":0},
+      "datasource": "CTIC Postgres",
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]}},
+      "targets":[{"refId":"A","format":"table","rawSql":"SELECT count(*)::bigint AS active_indicators_30d FROM public.indicators WHERE last_seen >= now() - interval '30 days';"}]
+    },
+    {
+      "type": "stat",
+      "title": "KPI: Events",
+      "gridPos": {"h":4,"w":6,"x":12,"y":0},
+      "datasource": "CTIC Postgres",
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]}},
+      "targets":[{"refId":"A","format":"table","rawSql":"SELECT count(*)::bigint AS total_events FROM public.sec_event;"}]
+    },
+    {
+      "type": "stat",
+      "title": "KPI: Matched Events",
+      "gridPos": {"h":4,"w":6,"x":18,"y":0},
+      "datasource": "CTIC Postgres",
+      "options": {"reduceOptions":{"calcs":["lastNotNull"]}},
+      "targets":[{"refId":"A","format":"table","rawSql":"SELECT count(DISTINCT ei.event_id)::bigint AS matched_events FROM public.event_indicator ei;"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Matches per day (time range)",
+      "gridPos": {"h":8,"w":12,"x":0,"y":4},
+      "datasource": "CTIC Postgres",
+      "options": {"legend":{"showLegend":false}},
+      "targets": [
+        {
+          "refId":"A",
+          "format":"time_series",
+          "rawSql":"SELECT date_trunc('day', s.event_time) AS time,\n       count(*)::bigint AS matches\nFROM public.event_indicator ei\nJOIN public.sec_event s   ON s.event_id = ei.event_id\nWHERE $__timeFilter(s.event_time)\nGROUP BY 1\nORDER BY 1;"
+        }
+      ]
+    },
+    {
+      "type": "barchart",
+      "title": "Top 20 IoCs by match count",
+      "gridPos": {"h":8,"w":12,"x":12,"y":4},
+      "datasource": "CTIC Postgres",
+      "options": {"orientation":"horizontal","legend":{"showLegend":false}},
+      "targets": [
+        {
+          "refId":"A",
+          "format":"table",
+          "rawSql":"SELECT i.value AS indicator,\n       count(*)::bigint AS match_count\nFROM public.event_indicator ei\nJOIN public.indicators i ON i.indicator_id = ei.indicator_id\nJOIN public.sec_event s   ON s.event_id = ei.event_id\nWHERE $__timeFilter(s.event_time)\nGROUP BY 1\nORDER BY match_count DESC\nLIMIT 20;"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Recent IoC Matches",
+      "gridPos": {"h":12,"w":24,"x":0,"y":12},
+      "datasource": "CTIC Postgres",
+      "options": {"showHeader":true},
+      "targets": [
+        {
+          "refId":"A",
+          "format":"table",
+          "rawSql":"SELECT em.event_time,\n       coalesce(em.vendor || ':' || em.product,'unknown') AS src_system,\n       em.indicator_type,\n       em.indicator_value,\n       em.event_id,\n       em.matched_at\nFROM public.event_matches em\nWHERE $__timeFilter(em.event_time)\nORDER BY em.event_time DESC\nLIMIT 200;"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Sightings per day by src_system",
+      "gridPos": {"h":8,"w":24,"x":0,"y":24},
+      "datasource": "CTIC Postgres",
+      "options": {"legend":{"showLegend":true}},
+      "targets": [
+        {
+          "refId":"A",
+          "format":"time_series",
+          "rawSql":"SELECT sg.seen_on::timestamp AS time,\n       coalesce(sg.src_system,'unknown') AS src_system,\n       count(*)::bigint AS sightings\nFROM public.sightings sg\nWHERE sg.seen_on BETWEEN $__timeFrom()::date AND $__timeTo()::date\nGROUP BY 1,2\nORDER BY 1,2;"
+        }
+      ],
+      "transformations":[{"id":"labelsToFields","options":{"mode":"columns"}}]
+    }
+  ]
+}

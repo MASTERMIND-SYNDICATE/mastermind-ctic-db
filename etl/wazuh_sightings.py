@@ -12,7 +12,7 @@ PG_DSN       = os.getenv("PG_DSN", "dbname=cticdb user=ctic password=cticpw host
 SRC_SYSTEM   = os.getenv("WAZUH_SRC", "wazuh")
 MOCK_PATH    = os.getenv("WZ_MOCK_PATH", "etl/mock/wz.json")
 
-WAZUH_URL    = os.getenv("WAZUH_URL")             # e.g. https://wazuh:55000
+WAZUH_URL    = os.getenv("WAZUH_URL")
 WAZUH_USER   = os.getenv("WAZUH_USER")
 WAZUH_PASS   = os.getenv("WAZUH_PASS")
 WAZUH_INSECURE   = os.getenv("WAZUH_INSECURE", "false").lower() == "true"
@@ -27,14 +27,14 @@ def pg():
     return psycopg2.connect(PG_DSN)
 
 def ensure_tables():
-    # Keep compatible with existing DB (etl_runs has etl_run_id PK, job, status with CHECK in ('ok','error'))
     with pg() as conn, conn.cursor() as cur:
         cur.execute("""
         CREATE TABLE IF NOT EXISTS public.sightings(
           sighting_id   BIGSERIAL PRIMARY KEY,
           indicator_id  BIGINT NOT NULL,
           src_system    TEXT   NOT NULL,
-          context       JSONB  NOT NULL
+          context       JSONB  NOT NULL,
+          ocsf          JSONB
         );
         """)
         cur.execute("""
@@ -52,7 +52,6 @@ def ensure_tables():
         """)
 
 def fetch_wazuh_events():
-    # Return a list[str] of compact JSON blobs to scan
     if not (WAZUH_URL and WAZUH_USER and WAZUH_PASS):
         if not os.path.exists(MOCK_PATH):
             return []
@@ -74,7 +73,6 @@ def fetch_wazuh_events():
         seq = items if isinstance(items, list) else [items]
         return [json.dumps(ev, separators=(",", ":"), ensure_ascii=False) for ev in seq]
     except Exception as e:
-        # Fallback to mock if present
         try:
             if os.path.exists(MOCK_PATH):
                 with open(MOCK_PATH, "r", encoding="utf-8") as f:
@@ -86,23 +84,24 @@ def fetch_wazuh_events():
         print(f"[warn] wazuh fetch failed: {e}")
         return []
 
-UPSERT_SQL = """
-WITH src(rawtxt) AS (SELECT * FROM unnest(%s::text[])),
-matches AS (
-  SELECT i.indicator_id, rawtxt
-  FROM src
-  JOIN public.indicators i
-    ON POSITION(i.value IN rawtxt) > 0
-)
-INSERT INTO public.sightings(indicator_id, src_system, seen_on, context)
-SELECT m.indicator_id, %s::text,
-       now(),
-       jsonb_build_object('raw', m.rawtxt, 'ingested_at', now())
-FROM matches m
-ON CONFLICT DO NOTHING
-RETURNING 1;
-"""
-
+def build_ocsf(raw_event_json, indicator_value, indicator_type, indicator_id):
+    try:
+        raw_event = json.loads(raw_event_json)
+    except Exception:
+        raw_event = {}
+    ocsf_obj = {
+        "event_class_id": 1002,
+        "category": "threat detection",
+        "severity": "medium",
+        "timestamp": raw_event.get("timestamp", datetime.utcnow().isoformat()),
+        "actor": {"type": "system", "name": "wazuh"},
+        "target": {"type": indicator_type, "value": indicator_value},
+        "observable": {"type": indicator_type, "value": indicator_value},
+        "data": raw_event,
+        "indicator_id": indicator_id
+    }
+    print("[debug] inserting OCSF:", ocsf_obj)
+    return ocsf_obj
 
 def run_once():
     ensure_tables()
@@ -112,7 +111,6 @@ def run_once():
     with pg() as conn:
         run_id = None
         try:
-            # Start run row with NULL status to avoid CHECK violation
             with conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO public.etl_runs(job, started_at) VALUES(%s, now()) RETURNING etl_run_id",
@@ -122,9 +120,26 @@ def run_once():
 
             inserted = 0
             if events:
-                with conn.cursor() as cur:
-                    cur.execute(UPSERT_SQL, (events, SRC_SYSTEM))
-                    inserted = cur.rowcount
+                with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+                    cur.execute("SELECT indicator_id, value, type FROM public.indicators")
+                    indicators = cur.fetchall()
+
+                for event_json in events:
+                    for indicator in indicators:
+                        if indicator["value"] in event_json:
+                            ocsf_record = build_ocsf(event_json, indicator["value"], indicator["type"], indicator["indicator_id"])
+                            with conn.cursor() as cur2:
+                                cur2.execute("""
+                                    INSERT INTO public.sightings(indicator_id, src_system, seen_on, context, ocsf)
+                                    VALUES (%s, %s, now(), %s, %s)
+                                    ON CONFLICT DO NOTHING
+                                """, (
+                                    indicator["indicator_id"],
+                                    SRC_SYSTEM,
+                                    json.dumps({"raw": event_json, "ingested_at": datetime.utcnow().isoformat()}),
+                                    json.dumps(ocsf_record)  # critical: always json.dumps!
+                                ))
+                            inserted += 1
                 status, notes = "ok", f"{inserted} sightings inserted"
             else:
                 status, notes = "ok", "no events"
@@ -143,7 +158,6 @@ def run_once():
             return inserted
 
         except Exception as e:
-            # Recover from aborted txn and mark the run as error
             try:
                 conn.rollback()
                 if run_id is None:
