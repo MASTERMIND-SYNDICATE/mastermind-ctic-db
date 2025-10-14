@@ -1,19 +1,38 @@
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# OS/IDE artifacts
 .DS_Store
-*.log
-.vscode/
 .idea/
+.vscode/
+
+# Docker/Postgres
 infra/pgdata/
+
+# Secrets & env files
 *.env
-docs/reports/*.csv
-docs/backups/*.sql
-infra/.env
 .env
-infra/.env
-.env
-infra/.env
 infra/.env
 infra/.env.local
-etl/mock/
 infra/.env.bak
+
+# Log/Test files
+*.log
+
+# ETL Mock data
+etl/mock/
+
+# Backups/Reports
+docs/reports/*.csv
+docs/backups/*.sql
+
+# Node/NPM (if any JS/TS in project)
+node_modules/
+
+# Coverage/Test
+htmlcov/
+.coverage
+*.sqlite
