@@ -6,6 +6,11 @@ import psycopg2
 import psycopg2.extras
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+import logging
+
+# --- Logging Setup ---
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", force=True)
+log = logging.getLogger("wazuh_sightings")
 
 # --- Config ---
 PG_DSN       = os.getenv("PG_DSN", "dbname=cticdb user=ctic password=cticpw host=postgres port=5432")
@@ -81,7 +86,7 @@ def fetch_wazuh_events():
                         for ev in (data if isinstance(data, list) else [])]
         except:
             pass
-        print(f"[warn] wazuh fetch failed: {e}")
+        log.warning("wazuh fetch failed: %s", e)
         return []
 
 def build_ocsf(raw_event_json, indicator_value, indicator_type, indicator_id):
@@ -100,13 +105,13 @@ def build_ocsf(raw_event_json, indicator_value, indicator_type, indicator_id):
         "data": raw_event,
         "indicator_id": indicator_id
     }
-    print("[debug] inserting OCSF:", ocsf_obj)
+    log.debug("inserting OCSF: %s", ocsf_obj)
     return ocsf_obj
 
 def run_once():
     ensure_tables()
     events = fetch_wazuh_events()
-    print(f"[info] events={len(events)}")
+    log.info("events=%d", len(events))
 
     with pg() as conn:
         run_id = None
@@ -154,7 +159,7 @@ def run_once():
                      WHERE etl_run_id     = %s
                 """, (status, inserted, notes, run_id))
             conn.commit()
-            print(f"[info] inserted={inserted} status={status}")
+            log.info("inserted=%d status=%s", inserted, status)
             return inserted
 
         except Exception as e:
@@ -179,7 +184,7 @@ def run_once():
                 conn.commit()
             except Exception:
                 conn.rollback()
-            print(f"[error] {e}")
+            log.error("%s", e)
             return 0
 
 def main():
@@ -190,7 +195,7 @@ def main():
         try:
             run_once()
         except Exception as e:
-            print(f"[error] {e}")
+            log.error("%s", e)
         time.sleep(INTERVAL_SEC)
 
 if __name__ == "__main__":
