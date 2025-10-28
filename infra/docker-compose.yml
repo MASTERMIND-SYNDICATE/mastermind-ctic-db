@@ -31,10 +31,12 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Provisioning configs (dash.yml, datasources, etc.)
-      - ./infra/grafana/provisioning:/etc/grafana/provisioning
+      # Provisioning configs
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      # Provisioning dashboards folder (for dash.yaml)
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
       # Dashboard JSONs (ctic-kpi.json, ctic-ioc-event.json, etc.)
-      - ./infra/grafana/provisioning/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
       # Grafana runtime data and logs
       - grafana_data:/var/lib/grafana
       - grafana_logs:/var/log/grafana
@@ -59,8 +61,8 @@ services:
   etl:
     image: infra-etl:latest
     build:
-      context: ..
-      dockerfile: infra/etl.Dockerfile
+      context: .
+      dockerfile: etl.Dockerfile
     container_name: ctic-etl
     working_dir: /workspace
     volumes:
@@ -82,6 +84,9 @@ services:
 
   wazuh-sightings:
     image: infra-etl:latest
+    build:
+      context: .
+      dockerfile: etl.Dockerfile
     container_name: ctic-wazuh-sightings
     working_dir: /workspace
     volumes:
