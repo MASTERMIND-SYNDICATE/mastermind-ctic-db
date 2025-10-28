@@ -30,7 +30,8 @@ CTIC collects, standardizes, and analyzes cyber incidents, indicators, and sight
 
 ***
 
-## ⚡ Quickstar```bash
+## ⚡ Quickstart
+```
 git clone https://github.com/MASTERMIND-SYNDICATE/open-ctic.git
 cd open-ctic/infra
 docker compose up -d
