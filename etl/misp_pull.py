@@ -74,10 +74,6 @@ def fetch_attributes():
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
-    print("Requesting:", f"{url}/attributes/restSearch.json")
-    print("Headers:", headers)
-    print("Payload:", json.dumps(payload))
-    print("Verify:", verify)
     try:
         r = requests.post(
             f"{url}/attributes/restSearch.json",
@@ -88,10 +84,11 @@ def fetch_attributes():
         )
         r.raise_for_status()
         j = r.json()
-        log.info("Payload sent: %s", payload)
+        log.info("POST to MISP executed successfully [URL: %s, Limit: %d]", url, limit)
+        log.info("Payload sent: {'returnFormat':..., 'limit':...}")
         return (j.get("response", {}).get("Attribute") or j.get("data") or [])
     except Exception as e:
-        log.error("Request failed: %s", e)
+        log.error("Request to MISP failed: %s", e)
         return []
 
 def build_ocsf_indicator(a):
