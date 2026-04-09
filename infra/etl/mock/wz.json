@@ -1,4 +1,16 @@
 [
-  {"timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","agent":"web-1","rule":"dns","id":"a1","msg":"8.8.8.8 malicious.example.com"},
-  {"timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","agent":"db-1","rule":"fw","id":"a2","dst":"203.0.113.77"}
+  {
+    "timestamp": "2025-04-01T12:00:00Z",
+    "agent": "web-1",
+    "rule": "dns",
+    "id": "a1",
+    "msg": "8.8.8.8 malicious.example.com"
+  },
+  {
+    "timestamp": "2025-04-01T12:05:00Z",
+    "agent": "db-1",
+    "rule": "fw",
+    "id": "a2",
+    "dst": "203.0.113.77"
+  }
 ]

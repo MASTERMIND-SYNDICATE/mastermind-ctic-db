@@ -95,8 +95,8 @@ services:
     environment:
       PGHOST: postgres
       PGPORT: "5432"
-    command: >
-      sh -c 'while true; do python -u -m etl.misp_pull; sleep $${ETL_INTERVAL_SEC:-300}; done'
+    entrypoint: ["sh", "-c"]
+    command: ['while true; do python -u -m etl.misp_pull; sleep $${ETL_INTERVAL_SEC:-300}; done']
     depends_on:
       postgres:
         condition: service_healthy
@@ -118,7 +118,7 @@ services:
       PGHOST: postgres
       PGPORT: "5432"
       ETL_INTERVAL_SEC: "0"
-    command: ["python", "-u", "-m", "etl.wazuh_sightings"]
+    command: ["-m", "etl.wazuh_sightings"]
     depends_on:
       postgres:
         condition: service_healthy
