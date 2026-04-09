@@ -91,8 +91,7 @@ private bridge network:
 
 Many-to-many relationships are modelled with junction tables:
 `incident_indicators`, `incident_vectors`, `incident_ttps`,
-`incident_regimes`, `incident_sources`, `indicator_campaign`,
-`campaign_indicator`.
+`incident_regimes`, `incident_sources`, and `indicator_campaign`.
 
 ### OCSF Layer
 

@@ -9,7 +9,7 @@ PSQL    := $(COMPOSE) exec postgres psql -U ctic -d cticdb
 .PHONY: help up down restart logs build \
         psql kpis seed reset \
         etl-run wazuh-run \
-        lint
+        lint fmt test
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -59,3 +59,9 @@ wazuh-run: ## Trigger a single Wazuh sightings run
 
 lint: ## Lint Python ETL code with ruff
 	ruff check etl/
+
+fmt: ## Check Python formatting with ruff
+	ruff format --check etl/
+
+test: ## Run unit tests with pytest
+	pytest tests/ -v

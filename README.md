@@ -1,5 +1,6 @@
 # Open-CTIC
 
+[![CI](https://github.com/MASTERMIND-SYNDICATE/mastermind-ctic-db/actions/workflows/ci.yml/badge.svg)](https://github.com/MASTERMIND-SYNDICATE/mastermind-ctic-db/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](infra/docker-compose.yml)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB.svg)](etl/)
@@ -149,6 +150,8 @@ This project is licensed under the [MIT License](LICENSE).
 ## Maintainer
 
 **Raymond James** -- [raymondjames@mastermindsyndicate.tech](mailto:raymondjames@mastermindsyndicate.tech)
+
+---
 
 ## Acknowledgements
 
