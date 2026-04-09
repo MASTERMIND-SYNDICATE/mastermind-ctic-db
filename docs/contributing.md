@@ -11,8 +11,8 @@ covers the development workflow, coding standards, and PR expectations.
 2. Clone your fork and create a feature branch:
 
    ```bash
-   git clone https://github.com/<your-user>/open-ctic.git
-   cd open-ctic
+   git clone https://github.com/<your-user>/mastermind-ctic-db.git
+   cd mastermind-ctic-db
    git checkout -b feat/my-feature
    ```
 

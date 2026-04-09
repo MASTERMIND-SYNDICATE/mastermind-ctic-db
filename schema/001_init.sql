@@ -11,7 +11,7 @@
 --   Core:       organizations, incidents, indicators, sightings
 --   Taxonomy:   vectors, ttps, campaigns, regimes, sources
 --   Impacts:    impacts (1:1 with incidents)
---   Junction:   incident_*, indicator_campaign, campaign_indicator
+--   Junction:   incident_*, indicator_campaign
 --   OCSF:       dim_*, sec_event, event_indicator
 --   Operations: etl_runs
 --
@@ -72,7 +72,7 @@ CREATE INDEX IF NOT EXISTS idx_indicators_last_seen
 -- Sightings: observations of an indicator in the wild.
 CREATE TABLE IF NOT EXISTS public.sightings (
     sighting_id       BIGSERIAL     PRIMARY KEY,
-    indicator_id      BIGINT        NOT NULL,
+    indicator_id      BIGINT        NOT NULL REFERENCES public.indicators(indicator_id) ON DELETE CASCADE,
     seen_on           DATE          NOT NULL DEFAULT CURRENT_DATE,
     src_system        TEXT,
     context           JSONB,
@@ -179,16 +179,6 @@ CREATE TABLE IF NOT EXISTS public.indicator_campaign (
     PRIMARY KEY (indicator_id, campaign_id)
 );
 
-CREATE TABLE IF NOT EXISTS public.campaign_indicator (
-    campaign_id  BIGINT REFERENCES public.campaigns(campaign_id)   ON DELETE CASCADE,
-    indicator_id BIGINT REFERENCES public.indicators(indicator_id) ON DELETE CASCADE,
-    PRIMARY KEY (campaign_id, indicator_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_campaign_indicator_campaign
-    ON public.campaign_indicator(campaign_id);
-CREATE INDEX IF NOT EXISTS idx_campaign_indicator_indicator
-    ON public.campaign_indicator(indicator_id);
 
 -- ---------------------------------------------------------------------------
 -- OCSF dimension tables

@@ -25,6 +25,14 @@ with a representative demo dataset. The data is loaded automatically by
 | `incident_sources.csv`   | incident_sources    | 4    | Incident-to-source links                 |
 | `indicator_campaign.csv` | indicator_campaign  | 3    | Indicator-to-campaign links              |
 
+## Indicator Type Convention
+
+The `indicators.csv` file uses simplified type names (`ip`, `hash`, `domain`)
+for readability in the demo/seed context. The live ETL pipeline (MISP pull)
+uses MISP-canonical types (`ip-dst`, `ip-src`, `md5`, `sha256`, `hostname`,
+etc.) as defined in `etl/misp_pull.py`. Do not rely on seed type values for
+production indicator matching.
+
 ## Scenarios
 
 The seed data models four realistic incident scenarios:

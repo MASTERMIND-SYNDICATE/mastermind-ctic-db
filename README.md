@@ -58,8 +58,8 @@ KPIs, sector risk, TTP trends, and compliance metrics in real time.
 
 ```bash
 # Clone the repository
-git clone https://github.com/MASTERMIND-SYNDICATE/open-ctic.git
-cd open-ctic
+git clone https://github.com/MASTERMIND-SYNDICATE/mastermind-ctic-db.git
+cd mastermind-ctic-db
 
 # Configure environment
 cp infra/.env.example infra/.env
@@ -84,7 +84,7 @@ docker compose exec postgres psql -U ctic -d cticdb -c "SELECT * FROM vw_kpis;"
 ## Project Structure
 
 ```
-open-ctic/
+mastermind-ctic-db/
 ├── schema/                 # SQL schema and seed loader
 │   ├── 001_init.sql        # Complete DDL: tables, indexes, views, functions
 │   └── 002_seed.sql        # COPY-based seed data loader

@@ -15,8 +15,8 @@ from __future__ import annotations
 import json
 import logging
 import warnings
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import UTC, datetime
+from typing import Any
 
 import psycopg2
 import requests
@@ -35,12 +35,21 @@ log = logging.getLogger("etl.misp_pull")
 # MISP type normalisation
 # ---------------------------------------------------------------------------
 
-ALLOWED_TYPES = frozenset({
-    "ip-dst", "ip-src", "domain", "hostname", "url",
-    "md5", "sha1", "sha256", "filename|sha256",
-})
+ALLOWED_TYPES = frozenset(
+    {
+        "ip-dst",
+        "ip-src",
+        "domain",
+        "hostname",
+        "url",
+        "md5",
+        "sha1",
+        "sha256",
+        "filename|sha256",
+    }
+)
 
-TYPE_MAP: Dict[str, str] = {
+TYPE_MAP: dict[str, str] = {
     "ip-dst": "ip-dst",
     "ip-src": "ip-src",
     "domain": "domain",
@@ -58,7 +67,7 @@ TYPE_MAP: Dict[str, str] = {
 }
 
 
-def normalise_type(raw_type: str) -> Optional[str]:
+def normalise_type(raw_type: str) -> str | None:
     """Map a raw MISP attribute type to a canonical indicator type."""
     mapped = TYPE_MAP.get((raw_type or "").lower(), (raw_type or "").lower())
     return mapped if mapped in ALLOWED_TYPES else None
@@ -69,7 +78,7 @@ def normalise_type(raw_type: str) -> Optional[str]:
 # ---------------------------------------------------------------------------
 
 
-def fetch_attributes() -> List[Dict[str, Any]]:
+def fetch_attributes() -> list[dict[str, Any]]:
     """Fetch IOC attributes from the configured MISP instance."""
     url = config.MISP_URL.rstrip("/") if config.MISP_URL else ""
     key = config.MISP_KEY
@@ -86,7 +95,7 @@ def fetch_attributes() -> List[Dict[str, Any]]:
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "returnFormat": "json",
         "limit": config.MISP_LIMIT,
     }
@@ -103,11 +112,7 @@ def fetch_attributes() -> List[Dict[str, Any]]:
         )
         resp.raise_for_status()
         body = resp.json()
-        attrs = (
-            body.get("response", {}).get("Attribute")
-            or body.get("data")
-            or []
-        )
+        attrs = body.get("response", {}).get("Attribute") or body.get("data") or []
         log.info("Fetched %d attributes from MISP (%s)", len(attrs), url)
         return attrs
     except requests.RequestException as exc:
@@ -120,10 +125,10 @@ def fetch_attributes() -> List[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 
-def build_ocsf_indicator(attr: Dict[str, Any]) -> Dict[str, Any]:
+def build_ocsf_indicator(attr: dict[str, Any]) -> dict[str, Any]:
     """Build an OCSF Threat Intel indicator event (class_id=1003)."""
     return {
-        "event_time": datetime.now(timezone.utc).isoformat(),
+        "event_time": datetime.now(UTC).isoformat(),
         "event_class_id": 1003,
         "category": "threat intelligence",
         "severity": "info",
@@ -142,9 +147,7 @@ def build_ocsf_indicator(attr: Dict[str, Any]) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def upsert_attributes(
-    conn: Any, attrs: List[Dict[str, Any]]
-) -> Tuple[int, int, int]:
+def upsert_attributes(conn: Any, attrs: list[dict[str, Any]]) -> tuple[int, int, int]:
     """Upsert MISP attributes into ``public.indicators``.
 
     Returns:
@@ -159,13 +162,9 @@ def upsert_attributes(
             if not value or not ind_type:
                 continue
 
-            ts = int(attr.get("timestamp") or 0) or int(
-                datetime.now(timezone.utc).timestamp()
-            )
-            seen = datetime.fromtimestamp(ts, timezone.utc)
-            ocsf = build_ocsf_indicator(
-                {**attr, "value": value, "type": ind_type}
-            )
+            ts = int(attr.get("timestamp") or 0) or int(datetime.now(UTC).timestamp())
+            seen = datetime.fromtimestamp(ts, UTC)
+            ocsf = build_ocsf_indicator({**attr, "value": value, "type": ind_type})
 
             try:
                 cur.execute(
@@ -252,7 +251,9 @@ def run_once() -> None:
     conn.close()
     log.info(
         "Cycle complete: inserted=%d updated=%d errors=%d",
-        inserted, updated, errors,
+        inserted,
+        updated,
+        errors,
     )
 
 

@@ -49,7 +49,8 @@ def ensure_tables(conn: Any) -> None:
         cur.execute("""
             CREATE TABLE IF NOT EXISTS public.sightings (
                 sighting_id       BIGSERIAL PRIMARY KEY,
-                indicator_id      BIGINT NOT NULL,
+                indicator_id      BIGINT NOT NULL
+                    REFERENCES public.indicators(indicator_id) ON DELETE CASCADE,
                 seen_on           DATE NOT NULL DEFAULT CURRENT_DATE,
                 src_system        TEXT,
                 context           JSONB,

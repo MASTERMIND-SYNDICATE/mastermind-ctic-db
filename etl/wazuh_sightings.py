@@ -16,8 +16,8 @@ import json
 import logging
 import time
 import warnings
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import psycopg2
 import psycopg2.extras
@@ -38,22 +38,19 @@ log = logging.getLogger("etl.wazuh_sightings")
 # ---------------------------------------------------------------------------
 
 
-def _load_mock_events(path: str) -> List[str]:
+def _load_mock_events(path: str) -> list[str]:
     """Load events from a local JSON mock file."""
     try:
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
         events = data if isinstance(data, list) else []
-        return [
-            json.dumps(ev, separators=(",", ":"), ensure_ascii=False)
-            for ev in events
-        ]
+        return [json.dumps(ev, separators=(",", ":"), ensure_ascii=False) for ev in events]
     except (FileNotFoundError, json.JSONDecodeError) as exc:
         log.warning("Cannot load mock events from %s: %s", path, exc)
         return []
 
 
-def fetch_events() -> List[str]:
+def fetch_events() -> list[str]:
     """Fetch Wazuh security events or fall back to mock data.
 
     Returns a list of JSON-encoded event strings.
@@ -66,9 +63,7 @@ def fetch_events() -> List[str]:
         warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
     base = config.WAZUH_URL.rstrip("/")
-    since = (
-        datetime.now(timezone.utc) - timedelta(minutes=config.WAZUH_QUERY_MINUTES)
-    ).isoformat()
+    since = (datetime.now(UTC) - timedelta(minutes=config.WAZUH_QUERY_MINUTES)).isoformat()
 
     try:
         resp = requests.get(
@@ -84,10 +79,7 @@ def fetch_events() -> List[str]:
         if not isinstance(items, list):
             items = [items]
         log.info("Fetched %d events from Wazuh", len(items))
-        return [
-            json.dumps(ev, separators=(",", ":"), ensure_ascii=False)
-            for ev in items
-        ]
+        return [json.dumps(ev, separators=(",", ":"), ensure_ascii=False) for ev in items]
     except requests.RequestException as exc:
         log.warning("Wazuh fetch failed (%s) — falling back to mock", exc)
         return _load_mock_events(config.WZ_MOCK_PATH)
@@ -103,7 +95,7 @@ def build_ocsf_sighting(
     indicator_value: str,
     indicator_type: str,
     indicator_id: int,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Build an OCSF Detection Finding event (class_id=1002)."""
     try:
         raw_event = json.loads(raw_json)
@@ -114,9 +106,7 @@ def build_ocsf_sighting(
         "event_class_id": 1002,
         "category": "threat detection",
         "severity": "medium",
-        "timestamp": raw_event.get(
-            "timestamp", datetime.now(timezone.utc).isoformat()
-        ),
+        "timestamp": raw_event.get("timestamp", datetime.now(UTC).isoformat()),
         "actor": {"type": "system", "name": "wazuh"},
         "target": {"type": indicator_type, "value": indicator_value},
         "observable": {"type": indicator_type, "value": indicator_value},
@@ -130,14 +120,14 @@ def build_ocsf_sighting(
 # ---------------------------------------------------------------------------
 
 
-def _load_indicators(conn: Any) -> List[Dict[str, Any]]:
+def _load_indicators(conn: Any) -> list[dict[str, Any]]:
     """Load all known indicators from the database."""
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         cur.execute("SELECT indicator_id, value, type FROM public.indicators")
         return [dict(row) for row in cur.fetchall()]
 
 
-def match_and_insert(conn: Any, events: List[str]) -> int:
+def match_and_insert(conn: Any, events: list[str]) -> int:
     """Match events against indicators and insert sightings.
 
     Returns the number of sightings inserted.
@@ -156,13 +146,13 @@ def match_and_insert(conn: Any, events: List[str]) -> int:
             if ind["value"] not in event_json:
                 continue
 
-            ocsf = build_ocsf_sighting(
-                event_json, ind["value"], ind["type"], ind["indicator_id"]
+            ocsf = build_ocsf_sighting(event_json, ind["value"], ind["type"], ind["indicator_id"])
+            context = json.dumps(
+                {
+                    "raw": event_json,
+                    "ingested_at": datetime.now(UTC).isoformat(),
+                }
             )
-            context = json.dumps({
-                "raw": event_json,
-                "ingested_at": datetime.now(timezone.utc).isoformat(),
-            })
 
             with conn.cursor() as cur:
                 cur.execute(
@@ -199,7 +189,7 @@ def run_once() -> int:
     ensure_tables(conn)
 
     # Record ETL run start.
-    run_id: Optional[int] = None
+    run_id: int | None = None
     try:
         with conn, conn.cursor() as cur:
             cur.execute(

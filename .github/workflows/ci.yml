@@ -5,8 +5,10 @@
 #
 # Jobs:
 #   lint       — Lint Python ETL code with ruff
+#   test       — Unit tests with pytest
 #   sql-check  — Validate SQL syntax with pg_query_go (sqlcheck)
 #   build      — Build Docker images to verify Dockerfile correctness
+#   scan       — Container vulnerability scan with Trivy
 ###############################################################################
 
 name: CI
@@ -45,6 +47,27 @@ jobs:
 
       - name: Ruff format check
         run: ruff format --check etl/
+
+  # ---------------------------------------------------------------------------
+  # Unit Tests
+  # ---------------------------------------------------------------------------
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r etl/requirements.txt pytest
+
+      - name: Run tests
+        run: pytest tests/ -v
 
   # ---------------------------------------------------------------------------
   # SQL Syntax Validation
@@ -106,3 +129,24 @@ jobs:
 
       - name: Verify ETL image runs
         run: docker run --rm ctic-etl:ci python -c "import etl; print('ETL package OK')"
+
+  # ---------------------------------------------------------------------------
+  # Container Security Scan
+  # ---------------------------------------------------------------------------
+  scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ETL image
+        run: docker build -f infra/Dockerfile.etl -t ctic-etl:ci .
+
+      - name: Run Trivy scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'ctic-etl:ci'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'

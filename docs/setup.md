@@ -19,8 +19,8 @@ of the Open-CTIC stack.
 ## 1. Clone the Repository
 
 ```bash
-git clone https://github.com/MASTERMIND-SYNDICATE/open-ctic.git
-cd open-ctic
+git clone https://github.com/MASTERMIND-SYNDICATE/mastermind-ctic-db.git
+cd mastermind-ctic-db
 ```
 
 ---
