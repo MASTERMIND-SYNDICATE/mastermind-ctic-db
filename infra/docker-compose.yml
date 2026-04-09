@@ -1,0 +1,141 @@
+###############################################################################
+# Open-CTIC Docker Compose Stack
+#
+# Services:
+#   postgres          — PostgreSQL 16 with schema init and seed data
+#   grafana           — Dashboard visualisation (port 3000)
+#   pgadmin           — Database admin GUI (port 8080)
+#   etl               — MISP indicator ingestion loop
+#   wazuh-sightings   — Wazuh sighting matcher (single run)
+#
+# Usage:
+#   cp .env.example .env   # configure secrets
+#   docker compose up -d
+#
+###############################################################################
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: ctic-postgres
+    environment:
+      POSTGRES_USER: ${PGUSER:-ctic}
+      POSTGRES_PASSWORD: ${PGPASSWORD:?Set PGPASSWORD in .env}
+      POSTGRES_DB: ${PGDATABASE:-cticdb}
+    ports:
+      - "${PG_HOST_PORT:-55432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../schema/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+      - ../schema/002_seed.sql:/docker-entrypoint-initdb.d/002_seed.sql:ro
+      - ../seed:/docker-entrypoint-initdb.d/seed:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-ctic} -d ${PGDATABASE:-cticdb}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - ctic
+
+  # ---------------------------------------------------------------------------
+  # Grafana
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: ctic-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD:-admin}
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ctic
+
+  # ---------------------------------------------------------------------------
+  # pgAdmin
+  # ---------------------------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:8.6
+    container_name: ctic-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@localhost}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "${PGADMIN_PORT:-8080}:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ctic
+
+  # ---------------------------------------------------------------------------
+  # ETL — MISP indicator pull (looping)
+  # ---------------------------------------------------------------------------
+  etl:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.etl
+    container_name: ctic-etl
+    env_file:
+      - .env
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+    command: >
+      sh -c 'while true; do python -u -m etl.misp_pull; sleep $${ETL_INTERVAL_SEC:-300}; done'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ctic
+
+  # ---------------------------------------------------------------------------
+  # ETL — Wazuh sightings (single run or loop)
+  # ---------------------------------------------------------------------------
+  wazuh-sightings:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.etl
+    container_name: ctic-wazuh-sightings
+    env_file:
+      - .env
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      ETL_INTERVAL_SEC: "0"
+    command: ["python", "-u", "-m", "etl.wazuh_sightings"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ctic
+
+# -----------------------------------------------------------------------------
+# Volumes
+# -----------------------------------------------------------------------------
+volumes:
+  pgdata:
+  grafana_data:
+
+# -----------------------------------------------------------------------------
+# Networks
+# -----------------------------------------------------------------------------
+networks:
+  ctic:
+    driver: bridge

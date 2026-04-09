@@ -1,16 +1,17 @@
 apiVersion: 1
+
 datasources:
   - name: CTIC Postgres
     uid: CTICPG
     type: postgres
     access: proxy
     url: postgres:5432
-    user: ctic
-    database: cticdb
+    user: $PGUSER
+    database: $PGDATABASE
     jsonData:
       sslmode: disable
-      postgresVersion: 1500
+      postgresVersion: 1600
       timescaledb: false
     secureJsonData:
-      password: cticpw
+      password: $PGPASSWORD
     isDefault: true

@@ -6,7 +6,7 @@ providers:
     type: file
     disableDeletion: false
     allowUiUpdates: true
-    updateIntervalSeconds: 10
+    updateIntervalSeconds: 30
     options:
       path: /var/lib/grafana/dashboards
       foldersFromFilesStructure: false
