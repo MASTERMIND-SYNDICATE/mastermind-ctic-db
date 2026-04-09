@@ -1,0 +1,16 @@
+.git
+.github
+.claude
+.vscode
+.idea
+*.md
+!etl/**
+!infra/**
+docs/
+seed/
+queries/
+.env
+*.log
+__pycache__
+.pytest_cache
+htmlcov

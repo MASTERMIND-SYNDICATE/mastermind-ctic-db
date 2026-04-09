@@ -1,38 +1,61 @@
-# Python
+# =============================================================================
+# Open-CTIC .gitignore
+# =============================================================================
+
+# -- Python -------------------------------------------------------------------
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
 
-# OS/IDE artifacts
-.DS_Store
-.idea/
-.vscode/
+# -- Virtual environments -----------------------------------------------------
+.venv/
+venv/
+env/
 
-# Docker/Postgres
-infra/pgdata/
-
-# Secrets & env files
-*.env
+# -- Environment & secrets ----------------------------------------------------
 .env
+*.env
 infra/.env
 infra/.env.local
 infra/.env.bak
 
-# Log/Test files
-*.log
+# -- IDE & editor -------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 
-# ETL Mock data
-etl/mock/
+# -- OS -----------------------------------------------------------------------
+.DS_Store
+Thumbs.db
 
-# Backups/Reports
-docs/reports/*.csv
-docs/backups/*.sql
+# -- Docker -------------------------------------------------------------------
+infra/pgdata/
 
-# Node/NPM (if any JS/TS in project)
-node_modules/
-
-# Coverage/Test
+# -- Test & coverage ----------------------------------------------------------
 htmlcov/
 .coverage
-*.sqlite
+.pytest_cache/
+
+# -- Logs ---------------------------------------------------------------------
+*.log
+
+# -- Generated files ----------------------------------------------------------
+ocsf_indicators.jsonl
+
+# -- Database backups ---------------------------------------------------------
+*.sql.bak
+
+# -- Claude Code --------------------------------------------------------------
+.claude/
+CLAUDE.md
+.mcp.json
+
+# -- Ruff cache ---------------------------------------------------------------
+.ruff_cache/

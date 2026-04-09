@@ -1,0 +1,27 @@
+[project]
+name = "open-ctic-etl"
+version = "2.0.0"
+description = "ETL pipeline for the Open-CTIC Cyber Threat Intelligence Center"
+requires-python = ">=3.12"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["etl"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["etl"]
+
+[tool.ruff.format]
+quote-style = "double"
